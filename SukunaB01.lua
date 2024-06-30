@@ -8,7 +8,7 @@ local player = Players.LocalPlayer
 local function createGUI()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "CharacterSelectorGUI"
-    screenGui.ResetOnSpawn = false  -- This makes the GUI persist across respawns
+    screenGui.ResetOnSpawn = false
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
     local mainFrame = Instance.new("Frame")
@@ -46,20 +46,23 @@ local function createGUI()
     closeButton.TextSize = 20
     closeButton.Parent = topBar
 
-    local dropdownButton = Instance.new("TextButton")
-    dropdownButton.Size = UDim2.new(1, -20, 0, 30)
-    dropdownButton.Position = UDim2.new(0, 10, 0, 40)
-    dropdownButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dropdownButton.Text = "Select a character"
-    dropdownButton.Parent = mainFrame
+    -- Search bar (replacing the dropdown button)
+    local searchBar = Instance.new("TextBox")
+    searchBar.Size = UDim2.new(1, -20, 0, 30)
+    searchBar.Position = UDim2.new(0, 10, 0, 40)
+    searchBar.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    searchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+    searchBar.PlaceholderText = "Search and select character..."
+    searchBar.Text = ""
+    searchBar.Font = Enum.Font.SourceSans
+    searchBar.TextSize = 14
+    searchBar.Parent = mainFrame
 
     local dropdownFrame = Instance.new("ScrollingFrame")
     dropdownFrame.Size = UDim2.new(1, -20, 0, 200)
     dropdownFrame.Position = UDim2.new(0, 10, 0, 80)
     dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     dropdownFrame.BorderSizePixel = 0
-    dropdownFrame.Visible = false
     dropdownFrame.ScrollBarThickness = 5
     dropdownFrame.Parent = mainFrame
 
@@ -70,18 +73,17 @@ local function createGUI()
         "Dagon", "Judgeman", "Mahito"
     }
 
-    for i, name in ipairs(names) do
+    local function createCharacterButton(name, index)
         local item = Instance.new("TextButton")
         item.Size = UDim2.new(1, -10, 0, 30)
-        item.Position = UDim2.new(0, 5, 0, (i-1) * 35)
+        item.Position = UDim2.new(0, 5, 0, (index-1) * 35)
         item.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
         item.TextColor3 = Color3.fromRGB(255, 255, 255)
         item.Text = name
         item.Parent = dropdownFrame
         
         item.MouseButton1Click:Connect(function()
-            dropdownButton.Text = name
-            dropdownFrame.Visible = false
+            searchBar.Text = name
             
             local args = {
                 [1] = "Character",
@@ -90,13 +92,33 @@ local function createGUI()
             }
             ReplicatedStorage:WaitForChild("Attribute"):FireServer(unpack(args))
         end)
+        return item
     end
 
-    dropdownButton.MouseButton1Click:Connect(function()
-        dropdownFrame.Visible = not dropdownFrame.Visible
-    end)
+    local characterButtons = {}
+    for i, name in ipairs(names) do
+        characterButtons[i] = createCharacterButton(name, i)
+    end
 
-    dropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #names * 35)
+    local function updateDropdown(searchText)
+        local visibleCount = 0
+        for i, button in ipairs(characterButtons) do
+            if string.find(string.lower(button.Text), string.lower(searchText)) then
+                button.Visible = true
+                button.Position = UDim2.new(0, 5, 0, visibleCount * 35)
+                visibleCount = visibleCount + 1
+            else
+                button.Visible = false
+            end
+        end
+        dropdownFrame.CanvasSize = UDim2.new(0, 0, 0, visibleCount * 35)
+    end
+
+    searchBar.Changed:Connect(function(prop)
+        if prop == "Text" then
+            updateDropdown(searchBar.Text)
+        end
+    end)
 
     -- Dragging functionality
     local dragging

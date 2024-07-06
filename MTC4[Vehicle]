@@ -1,0 +1,306 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create the ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "VehicleSelectionGui"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+-- Create the main frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 200, 0, 280)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -140)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Add rounded corners
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = mainFrame
+
+-- Create the top bar
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 25)
+topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+
+-- Add rounded corners to top bar
+local topBarCorner = Instance.new("UICorner")
+topBarCorner.CornerRadius = UDim.new(0, 10)
+topBarCorner.Parent = topBar
+
+-- Create the title
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, -25, 1, 0)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Vehicle Selection"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 14
+title.Font = Enum.Font.SourceSansBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+-- Create the close button
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -25, 0, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.TextSize = 14
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Parent = topBar
+
+-- Add rounded corners to close button
+local closeButtonCorner = Instance.new("UICorner")
+closeButtonCorner.CornerRadius = UDim.new(0, 10)
+closeButtonCorner.Parent = closeButton
+
+-- Create the content frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Size = UDim2.new(1, -20, 1, -35)
+contentFrame.Position = UDim2.new(0, 10, 0, 30)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+-- Function to create dropdowns
+local function createDropdown(name, position)
+    local dropdown = Instance.new("TextButton")
+    dropdown.Name = name .. "Dropdown"
+    dropdown.Size = UDim2.new(1, 0, 0, 25)
+    dropdown.Position = position
+    dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    dropdown.Text = "Select " .. name
+    dropdown.TextColor3 = Color3.new(1, 1, 1)
+    dropdown.TextSize = 14
+    dropdown.Font = Enum.Font.SourceSans
+    dropdown.Parent = contentFrame
+
+    local dropdownCorner = Instance.new("UICorner")
+    dropdownCorner.CornerRadius = UDim.new(0, 5)
+    dropdownCorner.Parent = dropdown
+
+    return dropdown
+end
+
+-- Create dropdowns
+local factionDropdown = createDropdown("Faction", UDim2.new(0, 0, 0, 0))
+local tier1Dropdown = createDropdown("Tier 1", UDim2.new(0, 0, 0, 35))
+local tier2Dropdown = createDropdown("Tier 2", UDim2.new(0, 0, 0, 70))
+local tier3Dropdown = createDropdown("Tier 3", UDim2.new(0, 0, 0, 105))
+local tier4Dropdown = createDropdown("Tier 4", UDim2.new(0, 0, 0, 140))
+local tier5Dropdown = createDropdown("Tier 5", UDim2.new(0, 0, 0, 175))
+
+-- Create spawn button
+local spawnButton = Instance.new("TextButton")
+spawnButton.Name = "SpawnButton"
+spawnButton.Size = UDim2.new(1, 0, 0, 25)
+spawnButton.Position = UDim2.new(0, 0, 0, 210)
+spawnButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+spawnButton.Text = "Spawn Vehicle"
+spawnButton.TextColor3 = Color3.new(1, 1, 1)
+spawnButton.TextSize = 14
+spawnButton.Font = Enum.Font.SourceSans
+spawnButton.Parent = contentFrame
+
+local spawnButtonCorner = Instance.new("UICorner")
+spawnButtonCorner.CornerRadius = UDim.new(0, 5)
+spawnButtonCorner.Parent = spawnButton
+
+-- Vehicle data
+local vehicleData = {
+    ["Eagle Federation"] = {
+        ["Tier 1"] = {"K1", "MT-LB", "AA", "UAZ-3909", "Humvee", "M113", "Kettenkrad", "LAV-25", "M1 Abrams", "M939", "MI-8AMTSh"},
+        ["Tier 2"] = {"T-64BV", "M901", "M109", "SAU-2", "Towvee", "M2A2 Bradley", "Leopard 2A4", "Type 90", "BTR-4", "HSTV-LD", "LTSE"},
+        ["Tier 3"] = {"Rosomak-S", "T-64BM \"Bulat\"", "STRF 9040C", "ADATS", "AFV-16"},
+        ["Tier 4"] = {"Leopard 2A6", "BM-21 Grad"},
+        ["Tier 5"] = {"Leopard 2A4 140MM", "M1A2 SEP V3"}
+    }
+}
+
+-- Function to create dropdown menu
+local function createDropdownMenu(parent, items, onSelection)
+    local existingMenu = parent:FindFirstChild("DropdownMenu")
+    if existingMenu then
+        existingMenu:Destroy()
+    end
+    
+    local menu = Instance.new("Frame")
+    menu.Name = "DropdownMenu"
+    menu.Size = UDim2.new(1, 0, 0, #items * 25)
+    menu.Position = UDim2.new(0, 0, 1, 0)
+    menu.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    menu.BorderSizePixel = 0
+    menu.Visible = false
+    menu.ZIndex = 10
+    menu.Parent = parent
+
+    local menuCorner = Instance.new("UICorner")
+    menuCorner.CornerRadius = UDim.new(0, 5)
+    menuCorner.Parent = menu
+
+    for i, item in ipairs(items) do
+        local button = Instance.new("TextButton")
+        button.Name = item
+        button.Size = UDim2.new(1, 0, 0, 25)
+        button.Position = UDim2.new(0, 0, 0, (i-1) * 25)
+        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        button.Text = item
+        button.TextColor3 = Color3.new(1, 1, 1)
+        button.TextSize = 12
+        button.Font = Enum.Font.SourceSans
+        button.Parent = menu
+        button.ZIndex = 11
+
+        button.MouseButton1Click:Connect(function()
+            onSelection(item)
+            menu.Visible = false
+        end)
+    end
+
+    return menu
+end
+
+-- Initialize selections
+local selectedFaction, selectedTier1, selectedTier2, selectedTier3, selectedTier4, selectedTier5
+
+-- Update tier dropdowns based on faction selection
+local function updateTierDropdowns(faction)
+    local vehicles = vehicleData[faction]
+    
+    createDropdownMenu(tier1Dropdown, vehicles["Tier 1"], function(item)
+        tier1Dropdown.Text = item
+        selectedTier1 = item
+    end)
+    createDropdownMenu(tier2Dropdown, vehicles["Tier 2"], function(item)
+        tier2Dropdown.Text = item
+        selectedTier2 = item
+    end)
+    createDropdownMenu(tier3Dropdown, vehicles["Tier 3"], function(item)
+        tier3Dropdown.Text = item
+        selectedTier3 = item
+    end)
+    createDropdownMenu(tier4Dropdown, vehicles["Tier 4"], function(item)
+        tier4Dropdown.Text = item
+        selectedTier4 = item
+    end)
+    createDropdownMenu(tier5Dropdown, vehicles["Tier 5"], function(item)
+        tier5Dropdown.Text = item
+        selectedTier5 = item
+    end)
+end
+
+-- Create faction dropdown menu
+createDropdownMenu(factionDropdown, {"Eagle Federation"}, function(item)
+    factionDropdown.Text = item
+    selectedFaction = item
+    updateTierDropdowns(item)
+end)
+
+-- Dropdown toggle functionality
+local function toggleDropdown(dropdown)
+    local menu = dropdown:FindFirstChild("DropdownMenu")
+    if menu then
+        menu.Visible = not menu.Visible
+    end
+end
+
+factionDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(factionDropdown)
+end)
+
+tier1Dropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(tier1Dropdown)
+end)
+
+tier2Dropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(tier2Dropdown)
+end)
+
+tier3Dropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(tier3Dropdown)
+end)
+
+tier4Dropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(tier4Dropdown)
+end)
+
+tier5Dropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(tier5Dropdown)
+end)
+
+-- Close button functionality
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Smooth dragging functionality
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    local newPosition = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    game:GetService("TweenService"):Create(mainFrame, TweenInfo.new(0.1), {Position = newPosition}):Play()
+end
+
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+topBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Function to spawn vehicle
+local function spawnVehicle(team)
+    if selectedFaction and selectedTier1 then
+        local args = {
+            [1] = selectedTier1,
+            [2] = {}
+        }
+        workspace.Map.TankSpawners[team].SpawnRequest:FireServer(unpack(args))
+    end
+end
+
+-- Spawn button functionality
+spawnButton.MouseButton1Click:Connect(function()
+    spawnVehicle("TeamA")
+    wait(0.1)  -- Small delay between spawns
+    spawnVehicle("TeamB")
+    wait(0.1)  -- Small delay between spawns
+    spawnVehicle("Spawner")
+end)

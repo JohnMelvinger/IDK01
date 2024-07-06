@@ -1,0 +1,398 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create the ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "WeaponSelectionGui"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+-- Create the main frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 200, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -125)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Add rounded corners
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = mainFrame
+
+-- Create the top bar
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 25)
+topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+
+-- Add rounded corners to top bar
+local topBarCorner = Instance.new("UICorner")
+topBarCorner.CornerRadius = UDim.new(0, 10)
+topBarCorner.Parent = topBar
+
+-- Create the title
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, -25, 1, 0)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Weapons"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 14
+title.Font = Enum.Font.SourceSansBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+-- Create the close button
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -25, 0, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.TextSize = 14
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Parent = topBar
+
+-- Add rounded corners to close button
+local closeButtonCorner = Instance.new("UICorner")
+closeButtonCorner.CornerRadius = UDim.new(0, 10)
+closeButtonCorner.Parent = closeButton
+
+-- Create the content frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Size = UDim2.new(1, -20, 1, -35)
+contentFrame.Position = UDim2.new(0, 10, 0, 30)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+-- Create dropdowns
+local function createDropdown(name, position)
+    local dropdown = Instance.new("TextButton")
+    dropdown.Name = name .. "Dropdown"
+    dropdown.Size = UDim2.new(1, 0, 0, 25)
+    dropdown.Position = position
+    dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    dropdown.Text = "Select " .. name
+    dropdown.TextColor3 = Color3.new(1, 1, 1)
+    dropdown.TextSize = 14
+    dropdown.Font = Enum.Font.SourceSans
+    dropdown.Parent = contentFrame
+
+    local dropdownCorner = Instance.new("UICorner")
+    dropdownCorner.CornerRadius = UDim.new(0, 5)
+    dropdownCorner.Parent = dropdown
+
+    return dropdown
+end
+
+local classDropdown = createDropdown("Class", UDim2.new(0, 0, 0, 0))
+local primaryDropdown = createDropdown("Primary", UDim2.new(0, 0, 0, 35))
+local secondaryDropdown = createDropdown("Secondary", UDim2.new(0, 0, 0, 70))
+local tertiaryDropdown = createDropdown("Tertiary", UDim2.new(0, 0, 0, 105))
+
+-- Create keybind button
+local keybindButton = Instance.new("TextButton")
+keybindButton.Name = "KeybindButton"
+keybindButton.Size = UDim2.new(1, 0, 0, 25)
+keybindButton.Position = UDim2.new(0, 0, 0, 140)
+keybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+keybindButton.Text = "Set Keybind"
+keybindButton.TextColor3 = Color3.new(1, 1, 1)
+keybindButton.TextSize = 14
+keybindButton.Font = Enum.Font.SourceSans
+keybindButton.Parent = contentFrame
+
+local keybindCorner = Instance.new("UICorner")
+keybindCorner.CornerRadius = UDim.new(0, 5)
+keybindCorner.Parent = keybindButton
+
+-- Weapon data (unchanged)
+local weaponData = {
+    Crewman = {
+        Primary = {"MP5", "AKS-74U", "PPSH-41 (box mag)", "PPS-43", "HellCannon", "SPG9", "ZU-23-2", "T-54 Turret", "UB32", "TOW Tripod", "Kornet"},
+        Secondary = {"M9", "Makarov PM", "AKM", "PPS-43"},
+        Tertiary = {"Parachute", "Wood Plank", "Placeable ERA", "Volnorez", "Iron Fist"}
+    },
+    Infantry = {
+        Primary = {"XM109", "RPG-7V2 PG-7V", "RPG-7V2 OG-7V", "RPG-29", "NLAW", "NLAW Box", "Solothurn S18-1000", "RPzB 54"},
+        Secondary = {"SVD", "PKM", "AK-12", "AKM", "AK-74M (1P29)", "Carbine (ACOG)", "M4A1", "PKP", "PPSH-41 (box mag)"},
+        Tertiary = {"Lunge Mine", "Mine", "C4", "Drone", "FPV Drone", "M2"}
+    },
+    Engineer = {
+        Primary = {"M4 Carbine", "M240B", "MG42", "PPSH-41 (box mag)"},
+        Secondary = {"Parachute", "Drozd", "Volnorez", "Iron Fist"},
+        Tertiary = {"Dynamite", "DSHK", "M134 Tripod", "M2", "SPG9", "122mm D-30", "Lancet Launcher", "TOW Tripod", "Kornet"}
+    }
+}
+
+-- Store selections for each class
+local selections = {
+    Crewman = {},
+    Infantry = {},
+    Engineer = {}
+}
+
+local selectedClass, selectedPrimary, selectedSecondary, selectedTertiary
+
+-- Function to send selection to server (unchanged)
+local function sendSelectionToServer()
+    if selectedClass and selectedPrimary and selectedSecondary and selectedTertiary then
+        local args = {
+            [1] = {
+                ["Class"] = selectedClass,
+                ["Weapons"] = {
+                    ["Primary"] = selectedPrimary,
+                    ["Secondary"] = selectedSecondary,
+                    ["Tertiary"] = selectedTertiary
+                }
+            }
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("WeaponStuff"):WaitForChild("FinalizeLoadout"):InvokeServer(unpack(args))
+        print("Selection sent to server:", selectedClass, selectedPrimary, selectedSecondary, selectedTertiary)
+    end
+end
+
+-- Function to create dropdown menu (modified for smaller size)
+local function createDropdownMenu(parent, items, onSelection)
+    local existingMenu = parent:FindFirstChild("DropdownMenu")
+    if existingMenu then
+        existingMenu:Destroy()
+    end
+    
+    local menu = Instance.new("Frame")
+    menu.Name = "DropdownMenu"
+    menu.Size = UDim2.new(1, 0, 0, #items * 25)
+    menu.Position = UDim2.new(0, 0, 1, 0)
+    menu.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    menu.BorderSizePixel = 0
+    menu.Visible = false
+    menu.ZIndex = 10
+    menu.Parent = parent
+
+    local menuCorner = Instance.new("UICorner")
+    menuCorner.CornerRadius = UDim.new(0, 5)
+    menuCorner.Parent = menu
+
+    for i, item in ipairs(items) do
+        local button = Instance.new("TextButton")
+        button.Name = item
+        button.Size = UDim2.new(1, 0, 0, 25)
+        button.Position = UDim2.new(0, 0, 0, (i-1) * 25)
+        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        button.Text = item
+        button.TextColor3 = Color3.new(1, 1, 1)
+        button.TextSize = 12
+        button.Font = Enum.Font.SourceSans
+        button.Parent = menu
+        button.ZIndex = 11
+
+        button.MouseButton1Click:Connect(function()
+            onSelection(item)
+            menu.Visible = false
+            sendSelectionToServer()
+        end)
+    end
+
+    return menu
+end
+
+-- Function to update weapon dropdowns (modified to remember selections)
+local function updateWeaponDropdowns(class)
+    local weapons = weaponData[class]
+    
+    -- If there are no saved selections for this class, initialize them
+    if not selections[class].Primary then
+        selections[class] = {
+            Primary = weapons.Primary[1],
+            Secondary = weapons.Secondary[1],
+            Tertiary = weapons.Tertiary[1]
+        }
+    end
+    
+    -- Update selected weapons and dropdown texts
+    selectedPrimary = selections[class].Primary
+    selectedSecondary = selections[class].Secondary
+    selectedTertiary = selections[class].Tertiary
+    
+    primaryDropdown.Text = selectedPrimary
+    secondaryDropdown.Text = selectedSecondary
+    tertiaryDropdown.Text = selectedTertiary
+
+    createDropdownMenu(primaryDropdown, weapons.Primary, function(item)
+        primaryDropdown.Text = item
+        selectedPrimary = item
+        selections[class].Primary = item
+    end)
+    createDropdownMenu(secondaryDropdown, weapons.Secondary, function(item)
+        secondaryDropdown.Text = item
+        selectedSecondary = item
+        selections[class].Secondary = item
+    end)
+    createDropdownMenu(tertiaryDropdown, weapons.Tertiary, function(item)
+        tertiaryDropdown.Text = item
+        selectedTertiary = item
+        selections[class].Tertiary = item
+    end)
+end
+
+-- Create class dropdown menu (modified to update selections)
+createDropdownMenu(classDropdown, {"Crewman", "Infantry", "Engineer"}, function(item)
+    classDropdown.Text = item
+    selectedClass = item
+    updateWeaponDropdowns(item)
+end)
+
+-- Dropdown toggle functionality
+local function toggleDropdown(dropdown)
+    local menu = dropdown:FindFirstChild("DropdownMenu")
+    if menu then
+        menu.Visible = not menu.Visible
+    end
+end
+
+classDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(classDropdown)
+end)
+
+primaryDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(primaryDropdown)
+end)
+
+secondaryDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(secondaryDropdown)
+end)
+
+tertiaryDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(tertiaryDropdown)
+end)
+
+-- Close button functionality
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Dragging functionality (unchanged)
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+topBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Keybind functionality
+local currentKeybind = Enum.KeyCode.K  -- Default keybind
+
+local function updateKeybindText()
+    keybindButton.Text = "Keybind: " .. currentKeybind.Name
+end
+
+updateKeybindText()
+
+keybindButton.MouseButton1Click:Connect(function()
+    keybindButton.Text = "Press any key..."
+    
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            currentKeybind = input.KeyCode
+            updateKeybindText()
+            connection:Disconnect()
+        end
+    end)
+end)
+
+-- Function to execute weapon selection (unchanged)
+local function executeWeaponSelection()
+    if selectedClass and selectedPrimary and selectedSecondary and selectedTertiary then
+        local args = {
+            [1] = {
+                ["Class"] = selectedClass,
+                ["Weapons"] = {
+                    ["Primary"] = selectedPrimary,
+                    ["Secondary"] = selectedSecondary,
+                    ["Tertiary"] = selectedTertiary
+                }
+            }
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("WeaponStuff"):WaitForChild("FinalizeLoadout"):InvokeServer(unpack(args))
+        print("Weapon selection executed:", selectedClass, selectedPrimary, selectedSecondary, selectedTertiary)
+    else
+        print("Please select all weapon options before executing")
+    end
+end
+
+-- Execute weapon selection with keybind
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKeybind then
+        executeWeaponSelection()
+    end
+end)
+
+-- Add an "Execute" button to the GUI
+local executeButton = Instance.new("TextButton")
+executeButton.Name = "ExecuteButton"
+executeButton.Size = UDim2.new(1, 0, 0, 25)
+executeButton.Position = UDim2.new(0, 0, 0, 175)  -- Positioned below the keybind button
+executeButton.BackgroundColor3 = Color3.fromRGB(60, 120, 60)  -- Green color
+executeButton.Text = "Execute Selection"
+executeButton.TextColor3 = Color3.new(1, 1, 1)
+executeButton.TextSize = 14
+executeButton.Font = Enum.Font.SourceSans
+executeButton.Parent = contentFrame
+
+local executeCorner = Instance.new("UICorner")
+executeCorner.CornerRadius = UDim.new(0, 5)
+executeCorner.Parent = executeButton
+
+executeButton.MouseButton1Click:Connect(executeWeaponSelection)
+
+-- Update the sendSelectionToServer function to use the new executeWeaponSelection function
+local function sendSelectionToServer()
+    executeWeaponSelection()
+end
+
+-- Create the GUI when the script runs
+ensureGUIExists()
+
+-- Recreate the GUI when the character respawns
+player.CharacterAdded:Connect(ensureGUIExists)
